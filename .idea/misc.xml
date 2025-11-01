@@ -6,6 +6,9 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="$PROJECT_DIR$/services/userService/pom.xml" />
+        <option value="$PROJECT_DIR$/services/accountService/pom.xml" />
+        <option value="$PROJECT_DIR$/infrastructure/eureka-server/pom.xml" />
       </list>
     </option>
   </component>
