@@ -2,15 +2,16 @@ package com.example.accountservice.Service;
 
 import com.example.accountservice.Dto.AccountResponseDto;
 import com.example.accountservice.Dto.CreateAccountRequestDto;
+import com.example.accountservice.Dto.TransferRequestDto;
 import com.example.accountservice.Model.AccountModel;
 import com.example.accountservice.Repository.AccountRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.math.BigDecimal;
+import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -63,15 +64,15 @@ public class AccountService {
            return convertToDto(accountOptional.get());
        }
        else
-           return null;
-
+            return null;
     }
     public AccountResponseDto getAccountByAccountNumber(String accountNumber){
         Optional<AccountModel> accountOptional = accountRepository.findByAccountNumber(accountNumber);
         if(accountOptional.isPresent()){
             return convertToDto(accountOptional.get());
         }else
-            return null;
+            throw new NoSuchElementException("account numberı:" + accountNumber + "olan hesap bulunmadı ");
+
     }
     public List<AccountResponseDto> getAccountByUserId(Long userId){
         List<AccountModel> accounts = accountRepository.findByUserId(userId);
@@ -83,6 +84,40 @@ public class AccountService {
                     .map(this::convertToDto)
                     .collect(Collectors.toList()); // Şimdi dönüş tipi eşleşiyor
         }
+    }
+    @Transactional
+    public String transfer(TransferRequestDto request){
+        Optional<AccountModel> sourceAccountOptional =
+                accountRepository.findByAccountNumber(request.getSourceAccountNumber());
+
+        Optional<AccountModel> targetAccountOptional =
+                accountRepository.findByAccountNumber(request.getTargetAccountNumber());
+        AccountModel sourceAccount = sourceAccountOptional.orElseThrow(
+                () -> new NoSuchElementException("Kaynak hesap bulunamadı: " + request.getSourceAccountNumber())
+        );
+        AccountModel targetAccount = targetAccountOptional.orElseThrow(
+                () -> new NoSuchElementException("Hedef hesap bulunamadı: " + request.getTargetAccountNumber())
+        );
+
+        BigDecimal transferAmount = request.getAmount();
+
+        if (sourceAccount.getBalance().compareTo(transferAmount) < 0) {
+
+            throw new RuntimeException("Yetersiz bakiye! Transfer miktarı: " + transferAmount);
+        }
+
+
+        sourceAccount.setBalance(sourceAccount.getBalance().subtract(transferAmount));
+
+
+        targetAccount.setBalance(targetAccount.getBalance().add(transferAmount));
+
+
+        accountRepository.save(sourceAccount);
+        accountRepository.save(targetAccount);
+
+        return "Para transferi tamamlandı. Yeni kaynak bakiye: " + sourceAccount.getBalance();
+
     }
     }
 

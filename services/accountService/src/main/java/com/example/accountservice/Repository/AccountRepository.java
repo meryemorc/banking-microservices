@@ -18,4 +18,6 @@ public interface AccountRepository extends JpaRepository<AccountModel, Long> {
     List<AccountModel> findByUserIdAndAccountType(Long userId, AccountType accountType);
 
     boolean existsByAccountNumber(String accountNumber);
+
+    Long id(Long id);
 }

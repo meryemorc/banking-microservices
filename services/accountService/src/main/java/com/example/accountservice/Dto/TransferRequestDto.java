@@ -11,10 +11,9 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TransferRequestDto {
+public class TransferRequestDto { //iki hesap arasında
 
     private String targetAccountNumber;
-
-
+    private String sourceAccountNumber;
     private BigDecimal amount;
 }

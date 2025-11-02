@@ -12,12 +12,10 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TransactionRequestDto {
+public class TransactionRequestDto { //tek hesaptaki işlemler
 
-    @NotNull(message = "Transaction type is required")
+
     private TransactionType transactionType;  // DEPOSIT veya WITHDRAW
 
-    @NotNull(message = "Amount is required")
-    @Positive(message = "Amount must be positive")
     private BigDecimal amount;
 }
