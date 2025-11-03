@@ -43,5 +43,7 @@ public class AccountModel {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
 
 }
