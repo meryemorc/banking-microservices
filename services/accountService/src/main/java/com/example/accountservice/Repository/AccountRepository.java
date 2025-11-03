@@ -11,7 +11,6 @@ import java.util.Optional;
 public interface AccountRepository extends JpaRepository<AccountModel, Long> {
 
     Optional<AccountModel> findByAccountNumber(String accountNumber);
-    Optional<AccountModel> findByAccountId(Long id);
 
     List<AccountModel> findByUserId(Long userId); //bir userın birden fazla hesabı olabilir
 
@@ -19,5 +18,4 @@ public interface AccountRepository extends JpaRepository<AccountModel, Long> {
 
     boolean existsByAccountNumber(String accountNumber);
 
-    Long id(Long id);
 }

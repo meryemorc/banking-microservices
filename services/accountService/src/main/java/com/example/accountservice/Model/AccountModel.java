@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name="account-db")
+@Table(name="account")
 public class AccountModel {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
@@ -20,13 +20,13 @@ public class AccountModel {
 
     @Column(nullable=false)
     @Min(0)
-    private BigDecimal Balance;
+    private BigDecimal balance;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AccountType accountType;
 
-    @Column(name="userId", nullable = false)
+    @Column(name="user_id", nullable = false)
     private Long userId;
 
     @Column(nullable = false, updatable = false)
@@ -35,6 +35,7 @@ public class AccountModel {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
     @Column(nullable = false)
     private LocalDateTime updatedAt;
