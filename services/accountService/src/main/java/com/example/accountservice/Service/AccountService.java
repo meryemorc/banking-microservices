@@ -1,10 +1,12 @@
 package com.example.accountservice.Service;
 
+import com.example.accountservice.Client.UserClient;
 import com.example.accountservice.Dto.*;
 import com.example.accountservice.Model.AccountModel;
 import com.example.accountservice.Repository.AccountRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AccountService {
     private final AccountRepository accountRepository;
+    private final UserClient userClient;
 
     public AccountResponseDto createAccount(CreateAccountRequestDto request) {
         checkUserExist(request.getUserId());
@@ -31,7 +34,6 @@ public class AccountService {
         newAccount.setAccountType(request.getAccountType());
 
         return convertToDto(accountRepository.save(newAccount));
-
     }
 
     private String generateAccountNumber() {
@@ -40,9 +42,20 @@ public class AccountService {
         return String.format("ACC-%d%04d", timestamp % 1000000, random);
     }
 
+    // AccountService.java içinde kalması gereken metot (createAccount tarafından çağrılır)
     private void checkUserExist(Long userId) {
+        // 1. Temel ID Kontrolü
         if (userId == null || userId < 0) {
             throw new IllegalArgumentException("user id gecerli değil");
+        }
+
+        // 2. Feign Client ile Uzak Servisi Çağırma
+        ResponseEntity<Boolean> response = userClient.checkUserExists(userId);
+
+        // 3. Yanıtı Doğrulama
+        // Eğer yanıt 2xx değilse VEYA gelen body 'false' ise
+        if (!response.getStatusCode().is2xxSuccessful() || Boolean.FALSE.equals(response.getBody())) {
+            throw new NoSuchElementException("Hesap oluşturulamadı: Belirtilen Kullanıcı ID'si (" + userId + ") mevcut değil.");
         }
     }
 
@@ -149,5 +162,6 @@ public class AccountService {
         AccountModel deactivatedAccount = accountRepository.save(accountToDeactive);
         return convertToDto(deactivatedAccount);
     }
+
 }
 

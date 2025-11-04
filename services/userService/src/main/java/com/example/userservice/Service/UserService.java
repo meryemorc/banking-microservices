@@ -1,5 +1,6 @@
 package com.example.userservice.Service;
 
+import com.example.userservice.Dto.UserDTO;
 import com.example.userservice.Dto.UserLoginRequest;
 import com.example.userservice.Dto.UserRegistrationRequest;
 import com.example.userservice.Model.UserModel;
@@ -28,17 +29,25 @@ public class UserService {
         return "Kayıt başarılı! hoş geldiniz" + user.getUsername();
     }
 
-    public String login(UserLoginRequest loginRequest) {
+    public UserDTO login(UserLoginRequest request) {
+        UserModel user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı!"));
 
-        String username = loginRequest.getUsername();
-        String password = loginRequest.getPassword();
-        Optional<UserModel> user = userRepository.findByUsername(username);
-        if(user.isPresent()){
-            if(user.get().getPassword().equals(password)){
-                return "giriş başarılı." + user.get().getUsername();
-            }
-            return "yanlış şifre";
+        if (!user.getPassword().equals(request.getPassword())) {
+            throw new RuntimeException("Şifre hatalı!");
         }
-return "kullanıcı bulunamadı";
+
+        return convertToDTO(user);
+    }
+    private UserDTO convertToDTO(UserModel user) {
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        return dto;
+    }
+
+    public boolean isValidUser(Long userId){
+        return userRepository.existsById(userId);
     }
 }
