@@ -16,7 +16,6 @@ import java.util.List;
 public class AccountController {
 
     private final AccountService accountService;
-    private final AccountRepository accountRepository;
 
     @PostMapping("/create")
     public ResponseEntity<AccountResponseDto> createAccount(@RequestBody CreateAccountRequestDto createAccount) {

@@ -42,18 +42,11 @@ public class AccountService {
         return String.format("ACC-%d%04d", timestamp % 1000000, random);
     }
 
-    // AccountService.java içinde kalması gereken metot (createAccount tarafından çağrılır)
     private void checkUserExist(Long userId) {
-        // 1. Temel ID Kontrolü
         if (userId == null || userId < 0) {
             throw new IllegalArgumentException("user id gecerli değil");
         }
-
-        // 2. Feign Client ile Uzak Servisi Çağırma
         ResponseEntity<Boolean> response = userClient.checkUserExists(userId);
-
-        // 3. Yanıtı Doğrulama
-        // Eğer yanıt 2xx değilse VEYA gelen body 'false' ise
         if (!response.getStatusCode().is2xxSuccessful() || Boolean.FALSE.equals(response.getBody())) {
             throw new NoSuchElementException("Hesap oluşturulamadı: Belirtilen Kullanıcı ID'si (" + userId + ") mevcut değil.");
         }

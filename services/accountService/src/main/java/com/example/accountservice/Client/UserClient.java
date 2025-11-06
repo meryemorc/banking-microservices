@@ -5,9 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-@FeignClient(name = "USER-SERVİCE")
+@FeignClient(name = "USER-SERVICE")
 public interface UserClient {
 
-    @GetMapping("/users/exists/{userId}")
+    @GetMapping("/user/exists/{userId}")
     ResponseEntity<Boolean> checkUserExists(@PathVariable("userId") Long userId);
 }
