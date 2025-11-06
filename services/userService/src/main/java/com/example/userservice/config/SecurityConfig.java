@@ -11,27 +11,35 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity //spring securıtyı aktif eder
 public class SecurityConfig {
 
-    @Bean //tnaımlanaacak filtreleri belirler
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CORS ve CSRF devre dışı bırakılır
-                .csrf(AbstractHttpConfigurer::disable) //keycloak kullandıgımız icin oturum tutmuyotuz stateless bu nedenle csrf gereksiz karmasıklık
-                .cors(AbstractHttpConfigurer::disable) //geliştirme kolaylıgı icin reactın ba ke kolay istek atmasını sagladık
-                .authorizeHttpRequests(auth -> auth //authorization kuralı blogu olusturur
-                        // Kayıt ve Giriş yolları herkes için erişilebilir olmalı
-                        .requestMatchers("/user/register", "/user/login").permitAll()
-                        // Eureka Discovery için gerekli yollar
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(AbstractHttpConfigurer::disable)
+                // ... (csrf, cors ayarları)
+                .authorizeHttpRequests(auth -> auth
+
+                        // KRİTİK: POST metodu için /register ve /login yollarını açın
+                        .requestMatchers(HttpMethod.POST, "/user/register", "/user/login").permitAll()
+
+                        // KRİTİK: GET metodu için de /exists/ gibi yolları açın
+                        .requestMatchers(HttpMethod.GET, "/user/exists/**").permitAll()
+
+                        // Eureka yolları
                         .requestMatchers("/eureka/**").permitAll()
-                        // Diğer tüm istekler kimlik doğrulaması gerektirmeli
+
+                        // Kalan tüm istekler kimlik doğrulaması gerektirsin (EN SONDA OLMALI)
                         .anyRequest().authenticated()
                 );
 
-        return http.build(); //butun filterları tek bir guvenlik kuralalrını birleştirmeye ve uygulamaya hazır bir güvenlik zincirine(SecurityFİlterChaın) cevirmeyi inşa eder
+        return http.build();
     }
 
     // Şifreleri şifrelemek için gerekli olan PasswordEncoder Bean'i

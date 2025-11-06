@@ -1,3 +1,10 @@
+
+application:
+  security:
+    jwt:
+      secret-key: NTg0ZTVmYzQ4Y2EwNDc2YmIzY2FhYjFiM2YwYTEwMTdmZTY1ZjYzYjQxZGYxMWU5ZTYxYmY2Y2M2YzU5YjA= # Token'ı imzalamak için kullanılır
+      expiration: 36000000
+
 spring:
   datasource:
     username: postgres

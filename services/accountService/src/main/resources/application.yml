@@ -1,16 +1,17 @@
 spring:
-  # 1. PROFILE & APPLICATION
+  main:
+    allow-bean-definition-overriding: true
+
   profiles:
     active: dev
+
   application:
     name: account-service
 
-  # 2. DATASOURCE
   datasource:
-    url: jdbc:postgresql://localhost:5432/account-db
+    url: jdbc:postgresql://localhost:5432/account_db
     driver-class-name: org.postgresql.Driver
 
-  # 3. JPA (Hibernate)
   jpa:
     hibernate:
       ddl-auto: update
@@ -19,23 +20,21 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
 
-  # 4. KRİTİK: SPRING SECURITY OAUTH2 RESOURCE SERVER AYARLARI
-  # Doğru URL formatı: http://KEYCLOAK_ADRESİ:PORT/realm/REALM_ADINIZ
+  # KRİTİK DÜZELTME: Security bloğu, spring bloğunun altında.
   security:
     oauth2:
       resourceserver:
         jwt:
-          # Keycloak Docker portunuz 9090, Realm adınız 'banking-realm' olmalı
+          # Keycloak ayarları
           issuer-uri: http://localhost:9090/realms/banking-realm
 
-# SERVER & EUREKA (Spring bloğunun dışında)
+# SERVER & EUREKA (Spring bloğunun dışına alınmalı)
 server:
   port: 8082
 
 eureka:
   client:
     service-url:
-      # CRITICAL FIX: defaultZone kullanın (tek 'Z')
       default-zone: http://localhost:8761/eureka/
   instance:
     instance-id: ${spring.application.name}:${instanceId:${random.value}}

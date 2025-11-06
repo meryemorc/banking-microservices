@@ -36,21 +36,31 @@ public class UserService {
         String hashedPassword = passwordEncoder.encode(registerUser.getPassword());
         user.setPassword(hashedPassword);
         userRepository.save(user);
-        return "Kayıt başarılı! hoş geldiniz" + user.getUsername();
+        return "Kayıt başarılı " + user.getUsername();
     }
     public UserLoginResponse login (UserLoginRequest loginUser){
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginUser.getEmail(), loginUser.getPassword())
-        );
-        UserModel user = (UserModel) authentication.getPrincipal();
+        try {
+            // kimlik dogrulama
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginUser.getEmail(), loginUser.getPassword())
+            );
+            //dogrulandıysa kullanıcıyı cekme
+            UserModel user = (UserModel) authentication.getPrincipal();
 
-        String token = jwtUtil.generateToken(user, user.getId());
-        return new UserLoginResponse();
+            String token = jwtUtil.generateToken(user, user.getId());
+
+            return new UserLoginResponse(token, convertToDTO(user));
+
+        } catch (Exception e) {
+            throw new RuntimeException("Kimlik doğrulama başarısız. Kullanıcı adı veya şifre hatalı.", e);
+        }
     }
+    // UserService.java içinde
+
     private UserDTO convertToDTO(UserModel user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
-        dto.setUsername(user.getUsername());
+        dto.setUsername(user.getRealUsername());
         dto.setEmail(user.getEmail());
         return dto;
     }

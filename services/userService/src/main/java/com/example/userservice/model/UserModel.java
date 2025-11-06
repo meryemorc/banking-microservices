@@ -41,6 +41,9 @@ public class UserModel implements UserDetails {
         // Biz login için email kullanacağımız için email'i döndürüyoruz.
         return email;
     }
+    public String getRealUsername() {
+        return username; // DTO dönüşümünde bu metodu kullanacağız.
+    }
     @Override
     public String getPassword() {
         // Lombok, getPassword() metodunu zaten oluşturuyor.
