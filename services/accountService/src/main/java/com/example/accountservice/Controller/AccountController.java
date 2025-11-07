@@ -18,14 +18,23 @@ public class AccountController {
     private final AccountService accountService;
 
     @PostMapping("/create")
-    public ResponseEntity<AccountResponseDto> createAccount(@RequestBody CreateAccountRequestDto createAccount) {
-        AccountResponseDto newAccount = accountService.createAccount(createAccount);
+    public ResponseEntity<AccountResponseDto> createAccount(
+            @RequestHeader("X-User-ID") Long userId,
+            @RequestBody CreateAccountRequestDto createAccount){
+
+        createAccount.setUserId(userId);
+        AccountResponseDto newAccount = accountService.createAccount(userId, createAccount);
         return new ResponseEntity<> (newAccount, HttpStatus.CREATED);
     }
 
     @PostMapping("/transfer")
-    public ResponseEntity<String> transfer (@RequestBody TransferRequestDto request) {
-        String transferAccount = accountService.transfer(request);
+    public ResponseEntity<String> transfer (
+            @RequestHeader("X-User-ID") Long currentUserId, // 1. Gateway'den Header'ı yakala
+            @RequestBody TransferRequestDto request)
+    {
+        // 2. Service metodunu, currentUserId ve DTO ile çağır.
+        String transferAccount = accountService.transfer(currentUserId, request);
+
         return new ResponseEntity<>(transferAccount, HttpStatus.OK);
     }
     @PostMapping("/update")
@@ -50,8 +59,9 @@ public class AccountController {
         return new ResponseEntity<>(account, HttpStatus.OK);
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<AccountResponseDto>> getAccountByUserId(@PathVariable long userId) {
+    @GetMapping("/my-accounts") // URL'yi daha mantıklı bir isimle değiştirdik
+    public ResponseEntity<List<AccountResponseDto>> getMyAccounts(@RequestHeader("X-User-ID") Long userId) {
+        // Servis çağrısı hala aynı: AccountService, bu ID'ye göre hesapları getirir.
         List<AccountResponseDto> accounts = accountService.getAccountByUserId(userId);
         return new ResponseEntity<>(accounts, HttpStatus.OK);
     }

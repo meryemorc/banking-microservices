@@ -20,15 +20,14 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final UserClient userClient;
 
-    public AccountResponseDto createAccount(CreateAccountRequestDto request) {
-        checkUserExist(request.getUserId());
+    public AccountResponseDto createAccount(Long secureUserId, CreateAccountRequestDto request) {
         String accountNumber = generateAccountNumber();
         while (accountRepository.existsByAccountNumber(accountNumber)) {
             accountNumber = generateAccountNumber();
         }
 
         AccountModel newAccount = new AccountModel();
-        newAccount.setUserId(request.getUserId());
+        newAccount.setUserId(secureUserId);
         newAccount.setAccountNumber(accountNumber);
         newAccount.setBalance(request.getInitialBalance());
         newAccount.setAccountType(request.getAccountType());
@@ -42,15 +41,6 @@ public class AccountService {
         return String.format("ACC-%d%04d", timestamp % 1000000, random);
     }
 
-    private void checkUserExist(Long userId) {
-        if (userId == null || userId < 0) {
-            throw new IllegalArgumentException("user id gecerli değil");
-        }
-        ResponseEntity<Boolean> response = userClient.checkUserExists(userId);
-        if (!response.getStatusCode().is2xxSuccessful() || Boolean.FALSE.equals(response.getBody())) {
-            throw new NoSuchElementException("Hesap oluşturulamadı: Belirtilen Kullanıcı ID'si (" + userId + ") mevcut değil.");
-        }
-    }
 
     private AccountResponseDto convertToDto(AccountModel accountModel) {
         AccountResponseDto accountResponseDto = new AccountResponseDto();
@@ -95,7 +85,7 @@ public class AccountService {
     }
 
     @Transactional
-    public String transfer(TransferRequestDto request) {
+    public String transfer(Long currentUserId,TransferRequestDto request) {
         Optional<AccountModel> sourceAccountOptional =
                 accountRepository.findByAccountNumber(request.getSourceAccountNumber());
 
@@ -109,17 +99,14 @@ public class AccountService {
         );
 
         BigDecimal transferAmount = request.getAmount();
-
+        if (!sourceAccount.getUserId().equals(currentUserId)) {
+            throw new RuntimeException("Yetkisiz İşlem: Token sahibi, kaynak hesabın sahibi değil.");
+        }
         if (sourceAccount.getBalance().compareTo(transferAmount) < 0) {
             throw new RuntimeException("yetersiz bakiye transfer miktarı:" + request.getAmount());
         }
-
-
         sourceAccount.setBalance(sourceAccount.getBalance().subtract(transferAmount));
-
-
         targetAccount.setBalance(targetAccount.getBalance().add(transferAmount));
-
         accountRepository.save(sourceAccount);
         accountRepository.save(targetAccount);
 

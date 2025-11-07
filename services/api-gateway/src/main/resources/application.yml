@@ -1,0 +1,35 @@
+server:
+  port: 8080
+
+spring:
+  # 1. KR?T?K DÜZELTME: profiles ve application ayn? seviyede olmal?
+  profiles:
+    active: dev
+
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      routes:
+        # 1. USER SERVICE
+        - id: user-service-route
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - RewritePath=/api/users/(?<remaining>.*), /user/$\{remaining}
+
+        # 2. ACCOUNT SERVICE
+        - id: account-service-route
+          uri: lb://ACCOUNT-SERVICE
+          predicates:
+            - Path=/api/accounts/**
+          filters:
+            - RewritePath=/api/accounts/(?<remaining>.*), /accounts/$\{remaining}
+
+# EUREKA AYARLARI (spring blo?unun d???nda olmal?)
+eureka:
+  client:
+    service-url:
+      default-zone: http://localhost:8761/eureka/
