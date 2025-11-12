@@ -55,7 +55,6 @@ public class UserService {
             throw new RuntimeException("Kimlik doğrulama başarısız. Kullanıcı adı veya şifre hatalı.", e);
         }
     }
-    // UserService.java içinde
 
     private UserDTO convertToDTO(UserModel user) {
         UserDTO dto = new UserDTO();

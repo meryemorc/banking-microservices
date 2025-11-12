@@ -25,14 +25,15 @@ public class AccountService {
         while (accountRepository.existsByAccountNumber(accountNumber)) {
             accountNumber = generateAccountNumber();
         }
-
         AccountModel newAccount = new AccountModel();
         newAccount.setUserId(secureUserId);
+
         newAccount.setAccountNumber(accountNumber);
         newAccount.setBalance(request.getInitialBalance());
         newAccount.setAccountType(request.getAccountType());
 
         return convertToDto(accountRepository.save(newAccount));
+
     }
 
     private String generateAccountNumber() {
