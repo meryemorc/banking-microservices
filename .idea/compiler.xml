@@ -19,6 +19,7 @@
         </processorPath>
         <module name="accountService" />
         <module name="userService" />
+        <module name="transactionService" />
       </profile>
     </annotationProcessing>
   </component>
@@ -27,6 +28,7 @@
       <module name="accountService" options="-parameters" />
       <module name="api-gateway" options="-parameters" />
       <module name="eureka-server" options="-parameters" />
+      <module name="transactionService" options="-parameters" />
       <module name="userService" options="-parameters" />
     </option>
   </component>
