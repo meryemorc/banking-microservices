@@ -38,7 +38,7 @@ public class TransactionService {
         return transactionRepository.findByTargetAccountNumber(accountNumber);
     }
     public Page<TransactionModel> getUserTransactionPaginated(Long userId, int page, int size){
-        return transactionRepository.findByUserId(userId, PageRequest.of(page,size));
+        return transactionRepository.findByUserIdPage(userId, PageRequest.of(page,size));
     }
     public List<TransactionModel> getTop10ByUserIdOrderByCreatedAtDesc(Long userId){
         return transactionRepository.findTop10ByUserIdOrderByCreatedAtDesc(userId);
