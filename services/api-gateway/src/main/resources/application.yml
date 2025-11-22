@@ -1,28 +1,26 @@
 server:
-  port: 8080 # Gateway'i 8080'de çalıştırırız
+  port: 8080
 
 spring:
-  # 1. PROFILE AKTİVASYONU
+
   profiles:
     active: dev
 
   application:
     name: api-gateway
 
-  # 2. KRİTİK GÜVENLİK AYARLARI (JWT Resource Server)
+
   security:
     oauth2:
       resourceserver:
         jwt:
-          # JWT Doğrulama için Secret Key'i çeker.
-          # Bu, User Service'teki anahtarınız olmalıdır.
           secret-key: NTg0ZTVmYzQ4Y2EwNDc2YmIzY2FhYjFiM2YwYTEwMTdmZTY1ZjYzYjQxZGYxMWU5ZTYxYmY2Y2M2YzU5YjA=
 
-  # 3. GATEWAY YÖNLENDİRMESİ
+
   cloud:
     gateway:
       routes:
-        # A. USER SERVICE YÖNLENDİRMESİ
+
         - id: user-service-route
           uri: lb://USER-SERVICE
           predicates:
@@ -30,7 +28,6 @@ spring:
           filters:
             - RewritePath=/api/users/(?<remaining>.*), /user/$\{remaining}
 
-        # B. ACCOUNT SERVICE YÖNLENDİRMESİ
         - id: account-service-route
           uri: lb://ACCOUNT-SERVICE
           predicates:
@@ -38,16 +35,24 @@ spring:
           filters:
             - RewritePath=/api/accounts/(?<remaining>.*), /accounts/$\{remaining}
 
-# EUREKA AYARLARI
+
+        - id: transaction-service-route
+          uri: lb://TRANSACTIONSERVICE
+          predicates:
+            - Path=/api/transactions/**
+          filters:
+            - RewritePath=/api/transactions/(?<remaining>.*), /transaction/$\{remaining}
+
+
 eureka:
   client:
     service-url:
       default-zone: http://localhost:8761/eureka/
 
-# UYGULAMA AYARLARI (GEREKLİ OLMASI DURUMUNDA DEV PROFILE İÇİN)
+
 application:
   security:
     jwt:
       # Eğer secret-key'i application.yml'ye değil, application-dev.yml'ye yazıyorsanız
-      # bu blok application-dev.yml'de olmalıdır. Ancak şimdilik tek dosyada tutmak daha güvenlidir.
+      # bu blok application-dev.yml'de olmalıdır.
       expiration: 36000000
