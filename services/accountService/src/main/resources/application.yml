@@ -20,7 +20,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
 
-  # KRİTİK DÜZELTME: Security bloğu, spring bloğunun altında.
+
   security:
     oauth2:
       resourceserver:
