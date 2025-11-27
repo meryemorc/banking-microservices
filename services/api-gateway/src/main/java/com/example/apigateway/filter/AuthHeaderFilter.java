@@ -22,7 +22,6 @@ public class AuthHeaderFilter implements GlobalFilter {
                     if (authentication != null && authentication.getPrincipal() instanceof Jwt) {
                         Jwt jwt = (Jwt) authentication.getPrincipal();
 
-                        // ⭐ DEĞİŞİKLİK: getClaim() kullan, tip belirt
                         Long userId = jwt.getClaim("userId");  // String yerine Long
 
                         if (userId != null) {

@@ -35,15 +35,6 @@ spring:
           filters:
             - RewritePath=/api/accounts/(?<remaining>.*), /accounts/$\{remaining}
 
-
-        - id: transaction-service-route
-          uri: lb://TRANSACTIONSERVICE
-          predicates:
-            - Path=/api/transactions/**
-          filters:
-            - RewritePath=/api/transactions/(?<remaining>.*), /transaction/$\{remaining}
-
-
 eureka:
   client:
     service-url:

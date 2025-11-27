@@ -32,7 +32,6 @@ public class AccountController {
             @RequestHeader("X-User-ID") Long currentUserId, // 1. Gateway'den Header'ı yakala
             @RequestBody TransferRequestDto request)
     {
-        // 2. Service metodunu, currentUserId ve DTO ile çağır.
         String transferAccount = accountService.transfer(currentUserId, request);
 
         return new ResponseEntity<>(transferAccount, HttpStatus.OK);
