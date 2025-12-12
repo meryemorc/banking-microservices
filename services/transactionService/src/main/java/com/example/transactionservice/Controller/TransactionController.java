@@ -2,16 +2,22 @@ package com.example.transactionservice.Controller;
 
 import com.example.transactionservice.Dto.TransactionRequestDto;
 import com.example.transactionservice.Dto.TransactionResponseDto;
+import com.example.transactionservice.Dto.TransactionStatsDto;
 import com.example.transactionservice.Model.TransactionModel;
+import com.example.transactionservice.Model.TransactionStatus;
+import com.example.transactionservice.Model.TransactionType;
 import com.example.transactionservice.Service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -69,5 +75,33 @@ public class TransactionController {
     ) {
         Page<TransactionModel> transactions = transactionService.findByUserId(userId, PageRequest.of(page, size));
         return ResponseEntity.ok(transactions);
+    }
+    @GetMapping("/filter")
+    public ResponseEntity<List<TransactionModel>> filterByDateRange(
+            @RequestHeader("X-User-ID") Long userId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        return ResponseEntity.ok(transactionService.filterByDateRange(userId, startDate, endDate));
+    }
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<TransactionModel>> filterByStatus(
+            @RequestHeader("X-User-ID") Long userId,
+            @PathVariable TransactionStatus status
+    ) {
+        return ResponseEntity.ok(transactionService.filterByStatus(userId, status));
+    }
+    @GetMapping("/type/{type}")
+    public ResponseEntity<List<TransactionModel>> filterByType(
+            @RequestHeader("X-User-ID") Long userId,
+            @PathVariable TransactionType type
+    ) {
+        return ResponseEntity.ok(transactionService.filterByType(userId, type));
+    }
+    @GetMapping("/stats")
+    public ResponseEntity<TransactionStatsDto> getUserStats(
+            @RequestHeader("X-User-ID") Long userId
+    ) {
+        return ResponseEntity.ok(transactionService.getUserStats(userId));
     }
 }
