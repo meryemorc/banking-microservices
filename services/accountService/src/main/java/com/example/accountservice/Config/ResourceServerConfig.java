@@ -1,4 +1,4 @@
-package com.example.accountservice.config;
+package com.example.accountservice.Config;
 
 import io.jsonwebtoken.io.Decoders; // <<<< BU IMPORT'U EKLEYİN
 import io.jsonwebtoken.security.Keys;

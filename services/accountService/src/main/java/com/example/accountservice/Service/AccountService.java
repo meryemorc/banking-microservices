@@ -1,12 +1,14 @@
 package com.example.accountservice.Service;
 
-import com.example.accountservice.Client.UserClient;
+import com.example.accountservice.Config.RabbitMQConfig;
 import com.example.accountservice.Dto.*;
 import com.example.accountservice.Model.AccountModel;
 import com.example.accountservice.Repository.AccountRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -18,7 +20,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AccountService {
     private final AccountRepository accountRepository;
-    private final UserClient userClient;
 
     public AccountResponseDto createAccount(Long secureUserId, CreateAccountRequestDto request) {
         String accountNumber = generateAccountNumber();
@@ -85,13 +86,20 @@ public class AccountService {
         }
     }
 
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Transactional
-    public String transfer(Long currentUserId,TransferRequestDto request) {
+    public String transfer(Long currentUserId, TransferRequestDto request) {
         Optional<AccountModel> sourceAccountOptional =
                 accountRepository.findByAccountNumber(request.getSourceAccountNumber());
 
         Optional<AccountModel> targetAccountOptional =
                 accountRepository.findByAccountNumber(request.getTargetAccountNumber());
+
         AccountModel sourceAccount = sourceAccountOptional.orElseThrow(
                 () -> new NoSuchElementException("kaynak hesap bulunamadı" + request.getSourceAccountNumber())
         );
@@ -100,19 +108,48 @@ public class AccountService {
         );
 
         BigDecimal transferAmount = request.getAmount();
+
         if (!sourceAccount.getUserId().equals(currentUserId)) {
             throw new RuntimeException("Yetkisiz İşlem: Token sahibi, kaynak hesabın sahibi değil.");
         }
+
         if (sourceAccount.getBalance().compareTo(transferAmount) < 0) {
             throw new RuntimeException("yetersiz bakiye transfer miktarı:" + request.getAmount());
         }
+
         sourceAccount.setBalance(sourceAccount.getBalance().subtract(transferAmount));
         targetAccount.setBalance(targetAccount.getBalance().add(transferAmount));
+
         accountRepository.save(sourceAccount);
         accountRepository.save(targetAccount);
 
-        return "Para transferi tamamlandı. Yeni kaynak bakiye: " + sourceAccount.getBalance();
+        TransactionMessageDto transactionMessage = new TransactionMessageDto(
+                currentUserId,
+                request.getSourceAccountNumber(),
+                request.getTargetAccountNumber(),
+                request.getAmount(),
+                "TRANSFER",
+                "SUCCESS",
+                "Para transferi gerçekleştirildi"
+        );
 
+        try {
+            String jsonMessage = objectMapper.writeValueAsString(transactionMessage);
+
+            //JSON olarak gönder
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.TRANSACTION_QUEUE,
+                    jsonMessage
+            );
+
+            System.out.println("📤 RabbitMQ'ya mesaj gönderildi (JSON): " + jsonMessage);
+
+        } catch (Exception e) {
+            System.err.println("❌ RabbitMQ mesaj gönderme hatası: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return "Para transferi tamamlandı. Yeni kaynak bakiye: " + sourceAccount.getBalance();
     }
 
     @Transactional

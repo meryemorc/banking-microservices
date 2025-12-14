@@ -14,7 +14,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   application:
-    name: transactionService
+    name: transaction-service
 
   rabbitmq:
     host: localhost
@@ -29,4 +29,3 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-

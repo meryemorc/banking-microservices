@@ -20,15 +20,18 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
 
-
   security:
     oauth2:
       resourceserver:
         jwt:
-          # Keycloak ayarları
           issuer-uri: http://localhost:9090/realms/banking-realm
 
-# SERVER & EUREKA (Spring bloğunun dışına alınmalı)
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
 server:
   port: 8082
 
