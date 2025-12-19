@@ -31,33 +31,47 @@ public class UserModel implements UserDetails {
     @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false)
+    private String role = "USER";  // Default: USER
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role));  // ✅ Artık çalışır!
     }
+
     // Spring Security, login sırasında veritabanından çektiği kullanıcı adını buradan alır.
     @Override
     public String getUsername() {
-        // Biz login için email kullanacağımız için email'i döndürüyoruz.
+        // Biz login için email kullanacağız
         return email;
     }
+
     public String getRealUsername() {
-        return username; // DTO dönüşümünde bu metodu kullanacağız.
+        return username; // DTO dönüşümü
     }
+
     @Override
     public String getPassword() {
-        // Lombok, getPassword() metodunu zaten oluşturuyor.
         return password;
     }
-    @Override
-    public boolean isAccountNonExpired() { return true; } // Hesap süresi dolmamış mı?
 
     @Override
-    public boolean isAccountNonLocked() { return true; } // Hesap kilitli değil mi? kullanıcı sifreyi cok yanlıs girerse hesap kilitlenebilir
+    public boolean isAccountNonExpired() {
+        return true;
+    }
 
     @Override
-    public boolean isCredentialsNonExpired() { return true; } // Şifre süresi dolmamış mı?
+    public boolean isAccountNonLocked() {
+        return true;
+    }
 
     @Override
-    public boolean isEnabled() { return true; } // Hesap aktif mi?
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 }

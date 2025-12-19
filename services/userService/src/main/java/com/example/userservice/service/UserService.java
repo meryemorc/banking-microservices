@@ -23,34 +23,33 @@ public class UserService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
 
+    public String register(UserRegistrationRequest registerUser) {
 
-
-    public String register(UserRegistrationRequest registerUser){
-        if(userRepository.findByUsername(registerUser.getUsername()).isPresent()
-                || userRepository.findByEmail(registerUser.getEmail()).isPresent()){
+        if (userRepository.findByUsername(registerUser.getUsername()).isPresent()
+                || userRepository.findByEmail(registerUser.getEmail()).isPresent()) {
             return "Kayıt başarısız! bu kullanıcı adı zaten var";
         }
+
         UserModel user = new UserModel();
         user.setUsername(registerUser.getUsername());
         user.setEmail(registerUser.getEmail());
         String hashedPassword = passwordEncoder.encode(registerUser.getPassword());
         user.setPassword(hashedPassword);
+        user.setRole("USER");  // ← EKLE! Default role
+
         userRepository.save(user);
         return "Kayıt başarılı " + user.getUsername();
     }
-    public UserLoginResponse login (UserLoginRequest loginUser){
+
+    public UserLoginResponse login(UserLoginRequest loginUser) {
         try {
-            // kimlik dogrulama
+            // Kimlik doğrulama
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginUser.getEmail(), loginUser.getPassword())
             );
-            //dogrulandıysa kullanıcıyı cekme
             UserModel user = (UserModel) authentication.getPrincipal();
-
             String token = jwtUtil.generateToken(user, user.getId());
-
             return new UserLoginResponse(token, convertToDTO(user));
-
         } catch (Exception e) {
             throw new RuntimeException("Kimlik doğrulama başarısız. Kullanıcı adı veya şifre hatalı.", e);
         }
@@ -61,10 +60,11 @@ public class UserService {
         dto.setId(user.getId());
         dto.setUsername(user.getRealUsername());
         dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
         return dto;
     }
 
-    public boolean isValidUser(Long userId){
+    public boolean isValidUser(Long userId) {
         return userRepository.existsById(userId);
     }
 }

@@ -2,13 +2,11 @@ server:
   port: 8080
 
 spring:
-
   profiles:
     active: dev
 
   application:
     name: api-gateway
-
 
   security:
     oauth2:
@@ -16,34 +14,39 @@ spring:
         jwt:
           secret-key: NTg0ZTVmYzQ4Y2EwNDc2YmIzY2FhYjFiM2YwYTEwMTdmZTY1ZjYzYjQxZGYxMWU5ZTYxYmY2Y2M2YzU5YjA=
 
-
   cloud:
     gateway:
       routes:
-
+        # User Service
         - id: user-service-route
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/api/users/**
-          filters:
-            - RewritePath=/api/users/(?<remaining>.*), /user/$\{remaining}
+            - Path=/users/**
 
+        # Account Service
         - id: account-service-route
           uri: lb://ACCOUNT-SERVICE
           predicates:
-            - Path=/api/accounts/**
-          filters:
-            - RewritePath=/api/accounts/(?<remaining>.*), /accounts/$\{remaining}
+            - Path=/accounts/**
+
+        # Transaction Service
+        - id: transaction-service-route
+          uri: lb://TRANSACTION-SERVICE
+          predicates:
+            - Path=/transactions/**
+
+        # Credit Service
+        - id: credit-service-route
+          uri: lb://CREDIT-SERVICE
+          predicates:
+            - Path=/credits/**
 
 eureka:
   client:
     service-url:
-      default-zone: http://localhost:8761/eureka/
-
+      defaultZone: http://localhost:8761/eureka/
 
 application:
   security:
     jwt:
-      # Eğer secret-key'i application.yml'ye değil, application-dev.yml'ye yazıyorsanız
-      # bu blok application-dev.yml'de olmalıdır.
       expiration: 36000000

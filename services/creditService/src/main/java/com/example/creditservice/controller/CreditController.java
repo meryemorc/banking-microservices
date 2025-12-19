@@ -18,45 +18,51 @@ public class CreditController {
     @Autowired
     private CreditService creditService;
 
-    /**
-     * Kredi başvurusu yap
-     * POST /credits/apply
-     */
     @PostMapping("/apply")
     public ResponseEntity<CreditResponseDto> applyForCredit(
-            @RequestHeader("X-User-ID") Long userId,
+            @RequestHeader("X-User-ID") Long userId,  // ← API Gateway'den geliyor!
             @Valid @RequestBody CreditApplicationDto dto) {
 
         CreditResponseDto response = creditService.applyForCredit(userId, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * Kullanıcının tüm kredilerini listele
-     * GET /credits/user/{userId}
-     */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<CreditResponseDto>> getUserCredits(@PathVariable Long userId) {
+    public ResponseEntity<List<CreditResponseDto>> getUserCredits(
+            @PathVariable Long userId,
+            @RequestHeader("X-User-ID") Long authenticatedUserId) {
+
+        if (!authenticatedUserId.equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+        }
+
         List<CreditResponseDto> credits = creditService.getUserCredits(userId);
         return ResponseEntity.ok(credits);
     }
 
-    /**
-     * Kredi detayını getir
-     * GET /credits/{creditId}
-     */
     @GetMapping("/{creditId}")
-    public ResponseEntity<CreditResponseDto> getCreditById(@PathVariable Long creditId) {
+    public ResponseEntity<CreditResponseDto> getCreditById(
+            @PathVariable Long creditId,
+            @RequestHeader("X-User-ID") Long userId) {
+
         CreditResponseDto credit = creditService.getCreditById(creditId);
+
+        if (!credit.getUserId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+        }
+
         return ResponseEntity.ok(credit);
     }
 
-    /**
-     * Kullanıcının aktif kredilerini listele
-     * GET /credits/user/{userId}/active
-     */
     @GetMapping("/user/{userId}/active")
-    public ResponseEntity<List<CreditResponseDto>> getUserActiveCredits(@PathVariable Long userId) {
+    public ResponseEntity<List<CreditResponseDto>> getUserActiveCredits(
+            @PathVariable Long userId,
+            @RequestHeader("X-User-ID") Long authenticatedUserId) {
+
+        if (!authenticatedUserId.equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+        }
+
         List<CreditResponseDto> credits = creditService.getUserActiveCredits(userId);
         return ResponseEntity.ok(credits);
     }

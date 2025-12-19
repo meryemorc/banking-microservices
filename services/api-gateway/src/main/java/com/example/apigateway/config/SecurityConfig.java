@@ -31,7 +31,6 @@ public class SecurityConfig {
         this.authHeaderFilter = authHeaderFilter;
     }
 
-    // ⭐ KRİTİK: Bu bean eksikti!
     @Bean
     public ReactiveJwtDecoder jwtDecoder() {
         // Base64 formatındaki secret key'i decode ediyoruz

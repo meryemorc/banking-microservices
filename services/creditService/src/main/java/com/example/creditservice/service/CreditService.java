@@ -146,7 +146,7 @@ public class CreditService {
         return totalAmount.divide(new BigDecimal(installments), 2, RoundingMode.HALF_UP);
     }
 
-    // Entity -> DTO
+
     private CreditResponseDto mapToDto(Credit credit) {
         return new CreditResponseDto(
                 credit.getId(),
