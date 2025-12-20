@@ -2,7 +2,9 @@ package com.example.apigateway.filter;
 
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -11,57 +13,74 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 @Component
-public class AuthHeaderFilter implements GlobalFilter {
+public class AuthHeaderFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 
         String path = exchange.getRequest().getURI().getPath();
+        String method = exchange.getRequest().getMethod().name();
 
-        // Public endpoint'ler (token kontrolü yok)
+        System.out.println("🌐 Gateway: " + method + " " + path);
+
+        // Public endpoint'ler
         if (path.contains("/users/register") || path.contains("/users/login")) {
+            System.out.println("✅ Public endpoint, direkt geçiyor");
             return chain.filter(exchange);
         }
 
         return ReactiveSecurityContextHolder.getContext()
-                .map(securityContext -> {
+                .flatMap(securityContext -> {
                     Authentication authentication = securityContext.getAuthentication();
 
-                    if (authentication != null && authentication.getPrincipal() instanceof Jwt) {
-                        Jwt jwt = (Jwt) authentication.getPrincipal();
+                    if (authentication == null || !(authentication.getPrincipal() instanceof Jwt)) {
+                        System.out.println("❌ Authentication null veya Jwt değil!");
+                        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                        return exchange.getResponse().setComplete();
+                    }
 
-                        Long userId = jwt.getClaim("userId");
-                        String role = jwt.getClaim("role");  // ← YENİ: Role al
+                    Jwt jwt = (Jwt) authentication.getPrincipal();
+                    Long userId = jwt.getClaim("userId");
+                    String role = jwt.getClaim("role");
 
-                        // ✅ ADMIN KONTROLÜ
-                        if (path.contains("/admin")) {
-                            if (role == null || !"ADMIN".equals(role)) {
-                                // 403 Forbidden döndür
-                                exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-                                return exchange;
-                            }
-                        }
+                    System.out.println("👤 UserId: " + userId + ", Role: " + role);
 
-                        if (userId != null) {
-                            return exchange.mutate()
-                                    .request(builder -> {
-                                        builder.header("X-User-ID", userId.toString());
-                                        if (role != null) {
-                                            builder.header("X-User-Role", role);  // ← YENİ: Role header ekle
-                                        }
-                                    })
-                                    .build();
+                    if (userId == null) {
+                        System.out.println("❌ UserId null!");
+                        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                        return exchange.getResponse().setComplete();
+                    }
+
+                    // ADMIN kontrolü
+                    if (path.contains("/admin")) {
+                        if (!"ADMIN".equals(role)) {
+                            System.out.println("❌ Admin yetkisi gerekli! (role: " + role + ")");
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            return exchange.getResponse().setComplete();
                         }
                     }
-                    return exchange;
+
+                    // Header'ları ekle
+                    ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
+                            .header("X-User-ID", userId.toString())
+                            .header("X-User-Role", role != null ? role : "USER")
+                            .build();
+
+                    System.out.println("✅ Header eklendi, servise yönlendiriliyor...");
+
+                    // İsteği devam ettir
+                    return chain.filter(exchange.mutate().request(modifiedRequest).build());
                 })
-                .defaultIfEmpty(exchange)
-                .flatMap(modifiedExchange -> {
-                    // Eğer response zaten set edildiyse (403 gibi), chain'e gitme
-                    if (modifiedExchange.getResponse().getStatusCode() != null) {
-                        return modifiedExchange.getResponse().setComplete();
-                    }
-                    return chain.filter(modifiedExchange);
+                .onErrorResume(e -> {
+                    System.err.println("❌ Filter hatası: " + e.getMessage());
+                    e.printStackTrace();
+                    exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                    return exchange.getResponse().setComplete();
                 });
+    }
+
+    @Override
+    public int getOrder() {
+        return -1;
     }
 }

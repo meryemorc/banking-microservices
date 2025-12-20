@@ -18,10 +18,21 @@ public class CreditAdminController {
 
     @GetMapping("/pending")
     public ResponseEntity<List<CreditResponseDto>> getPendingCredits(
-            @RequestHeader("X-User-ID") Long adminUserId) {  // ← Header'dan al
+            @RequestHeader("X-User-ID") Long adminUserId) {
 
-        List<CreditResponseDto> credits = creditService.getPendingCredits();
-        return ResponseEntity.ok(credits);
+        try {
+            System.out.println("📋 Bekleyen krediler istendi: adminId=" + adminUserId);
+
+            List<CreditResponseDto> credits = creditService.getPendingCredits();
+
+            System.out.println("✅ Bekleyen kredi sayısı: " + credits.size());
+
+            return ResponseEntity.ok(credits);
+        } catch (Exception e) {
+            System.err.println("❌ Bekleyen krediler hatası: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     @PutMapping("/{creditId}/approve")

@@ -20,7 +20,7 @@ public class CreditController {
 
     @PostMapping("/apply")
     public ResponseEntity<CreditResponseDto> applyForCredit(
-            @RequestHeader("X-User-ID") Long userId,  // ← API Gateway'den geliyor!
+            @RequestHeader("X-User-ID") Long userId,
             @Valid @RequestBody CreditApplicationDto dto) {
 
         CreditResponseDto response = creditService.applyForCredit(userId, dto);
