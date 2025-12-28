@@ -1,3 +1,4 @@
+
 package com.example.apigateway.filter;
 
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -23,12 +24,13 @@ public class AuthHeaderFilter implements GlobalFilter, Ordered {
 
         System.out.println("🌐 Gateway: " + method + " " + path);
 
-        // Public endpoint'ler
-        if (path.contains("/users/register") || path.contains("/users/login")) {
-            System.out.println("✅ Public endpoint, direkt geçiyor");
+        // Public endpoint'ler - JWT kontrolü yapma
+        if (path.equals("/users/register") || path.equals("/users/login")) {
+            System.out.println("✅ Public endpoint, JWT kontrolü atlanıyor");
             return chain.filter(exchange);
         }
 
+        // Diğer tüm endpoint'ler için JWT kontrolü
         return ReactiveSecurityContextHolder.getContext()
                 .flatMap(securityContext -> {
                     Authentication authentication = securityContext.getAuthentication();
@@ -68,9 +70,13 @@ public class AuthHeaderFilter implements GlobalFilter, Ordered {
 
                     System.out.println("✅ Header eklendi, servise yönlendiriliyor...");
 
-                    // İsteği devam ettir
                     return chain.filter(exchange.mutate().request(modifiedRequest).build());
                 })
+                // Public endpoint'ler için SecurityContext boş olabilir - bunu handle et
+                .switchIfEmpty(Mono.defer(() -> {
+                    System.out.println("⚠️ SecurityContext boş - public endpoint olmalı");
+                    return chain.filter(exchange);
+                }))
                 .onErrorResume(e -> {
                     System.err.println("❌ Filter hatası: " + e.getMessage());
                     e.printStackTrace();
@@ -81,6 +87,6 @@ public class AuthHeaderFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -1;
+        return -1; // Security filter'dan SONRA çalışmalı
     }
 }

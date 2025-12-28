@@ -9,7 +9,7 @@ spring:
     name: account-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/account_db
+    url: jdbc:postgresql://postgres:5432/account_db  # localhost -> postgres
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -24,10 +24,10 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9090/realms/banking-realm
+          issuer-uri: http://localhost:9090/realms/banking-realm  # Bunu şimdilik bırak
 
   rabbitmq:
-    host: localhost
+    host: rabbitmq  # localhost -> rabbitmq
     port: 5672
     username: guest
     password: guest
@@ -38,6 +38,6 @@ server:
 eureka:
   client:
     service-url:
-      default-zone: http://localhost:8761/eureka/
+      defaultZone: http://eureka-server:8761/eureka/
   instance:
     instance-id: ${spring.application.name}:${instanceId:${random.value}}
