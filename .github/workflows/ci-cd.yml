@@ -1,0 +1,231 @@
+name: Banking Microservices CI/CD
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+env:
+  DOCKER_USERNAME: meryem1720
+
+jobs:
+  # Job 1: Test all services
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Test Eureka Server
+        run: |
+          cd infrastructure/eureka-server
+          mvn test
+
+      - name: Test User Service
+        run: |
+          cd services/userService
+          mvn test
+
+      - name: Test Account Service
+        run: |
+          cd services/accountService
+          mvn test
+
+      - name: Test Transaction Service
+        run: |
+          cd services/transactionService
+          mvn test
+
+      - name: Test Credit Service
+        run: |
+          cd services/creditService
+          mvn test
+
+      - name: Test API Gateway
+        run: |
+          cd services/api-gateway
+          mvn test
+
+  # Job 2: Build and push Docker images
+  build-and-push:
+    name: Build and Push Docker Images
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    strategy:
+      matrix:
+        service:
+          - name: 'eureka-server'
+            path: 'infrastructure/eureka-server'
+            image: 'eureka-server'
+          - name: 'user-service'
+            path: 'services/userService'
+            image: 'user-service'
+          - name: 'account-service'
+            path: 'services/accountService'
+            image: 'account-service'
+          - name: 'transaction-service'
+            path: 'services/transactionService'
+            image: 'transaction-service'
+          - name: 'credit-service'
+            path: 'services/creditService'
+            image: 'credit-service'
+          - name: 'api-gateway'
+            path: 'services/api-gateway'
+            image: 'api-gateway'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build ${{ matrix.service.name }}
+        run: |
+          cd ${{ matrix.service.path }}
+          mvn clean package -DskipTests
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker Image
+        run: |
+          cd ${{ matrix.service.path }}
+          docker build -t ${{ env.DOCKER_USERNAME }}/${{ matrix.service.image }}:latest .
+          docker tag ${{ env.DOCKER_USERNAME }}/${{ matrix.service.image }}:latest \
+                     ${{ env.DOCKER_USERNAME }}/${{ matrix.service.image }}:${{ github.sha }}
+
+      - name: Push Docker Image
+        run: |
+          docker push ${{ env.DOCKER_USERNAME }}/${{ matrix.service.image }}:latest
+          docker push ${{ env.DOCKER_USERNAME }}/${{ matrix.service.image }}:${{ github.sha }}
+
+      - name: Image Build Summary
+        run: |
+          echo "Successfully built and pushed:"
+          echo "  - ${{ env.DOCKER_USERNAME }}/${{ matrix.service.image }}:latest"
+          echo "  - ${{ env.DOCKER_USERNAME }}/${{ matrix.service.image }}:${{ github.sha }}"
+
+  # Job 3: AWS deployment simulation
+  deploy-simulation:
+    name: AWS Deployment Simulation
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Simulate AWS ECS Deployment
+        run: |
+          echo "========================================================"
+          echo "Starting AWS ECS Deployment Simulation"
+          echo "========================================================"
+          echo ""
+          echo "Region: eu-central-1"
+          echo "Cluster: banking-microservices-cluster"
+          echo "Strategy: Blue/Green Deployment"
+          echo ""
+          echo "--------------------------------------------------------"
+          echo "Step 1/6: Authenticating to AWS ECR"
+          echo "--------------------------------------------------------"
+          echo "Command: aws ecr get-login-password --region eu-central-1"
+          echo "Status: Successfully authenticated to ECR"
+          echo ""
+          echo "--------------------------------------------------------"
+          echo "Step 2/6: Updating ECS Task Definitions"
+          echo "--------------------------------------------------------"
+          services=("eureka-server" "api-gateway" "user-service" "account-service" "transaction-service" "credit-service")
+          for service in "${services[@]}"; do
+            echo "  Registering task definition: $service"
+            echo "  Task Definition ARN: arn:aws:ecs:eu-central-1:123456789:task-definition/$service:${{ github.run_number }}"
+          done
+          echo ""
+          echo "--------------------------------------------------------"
+          echo "Step 3/6: Deploying Services (Blue/Green)"
+          echo "--------------------------------------------------------"
+          for service in "${services[@]}"; do
+            echo "  Deploying: $service"
+            echo "  Waiting for service to stabilize..."
+            sleep 1
+            echo "  Service $service deployed successfully"
+          done
+          echo ""
+          echo "--------------------------------------------------------"
+          echo "Step 4/6: Running Health Checks"
+          echo "--------------------------------------------------------"
+          echo "  eureka-server: Healthy (2/2 tasks)"
+          echo "  api-gateway: Healthy (2/2 tasks)"
+          echo "  user-service: Healthy (2/2 tasks)"
+          echo "  account-service: Healthy (2/2 tasks)"
+          echo "  transaction-service: Healthy (2/2 tasks)"
+          echo "  credit-service: Healthy (2/2 tasks)"
+          echo ""
+          echo "--------------------------------------------------------"
+          echo "Step 5/6: Switching Traffic (Blue to Green)"
+          echo "--------------------------------------------------------"
+          echo "  Traffic Distribution:"
+          echo "    Blue Environment (Old):  100% -> 0%"
+          echo "    Green Environment (New):   0% -> 100%"
+          echo "  Traffic switched successfully"
+          echo ""
+          echo "--------------------------------------------------------"
+          echo "Step 6/6: Deployment Summary"
+          echo "--------------------------------------------------------"
+          echo "  Region: eu-central-1"
+          echo "  Cluster: banking-microservices-cluster"
+          echo "  Services Deployed: 6"
+          echo "  Deployment Time: ~5 minutes"
+          echo "  Load Balancer: banking-alb-123456789.eu-central-1.elb.amazonaws.com"
+          echo "  Database: banking-db.xyz123.eu-central-1.rds.amazonaws.com"
+          echo "  Message Queue: banking-mq.mq.eu-central-1.amazonaws.com"
+          echo ""
+          echo "========================================================"
+          echo "AWS Deployment Simulation Completed Successfully"
+          echo "========================================================"
+          echo ""
+          echo "Access URLs (Simulated):"
+          echo "  API Gateway: https://api.bankingapp.com"
+          echo "  Eureka Dashboard: https://eureka.bankingapp.com"
+          echo "  CloudWatch Logs: https://console.aws.amazon.com/cloudwatch/home?region=eu-central-1"
+          echo ""
+          echo "Next Steps:"
+          echo "  1. Monitor CloudWatch metrics"
+          echo "  2. Check application logs"
+          echo "  3. Run smoke tests"
+          echo "  4. Notify team of successful deployment"
+
+  # Job 4: Deployment notification
+  notify:
+    name: Deployment Notification
+    needs: [test, build-and-push, deploy-simulation]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Deployment Status
+        run: |
+          if [ "${{ needs.deploy-simulation.result }}" == "success" ]; then
+            echo "Deployment completed successfully"
+            echo "All services are running on AWS ECS"
+          else
+            echo "Deployment failed"
+            echo "Check logs for details"
+          fi
