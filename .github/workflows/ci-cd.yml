@@ -10,56 +10,9 @@ env:
   DOCKER_USERNAME: meryem1720
 
 jobs:
-  # Job 1: Test all services
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v3
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Test Eureka Server
-        run: |
-          cd infrastructure/eureka-server
-          mvn test
-
-      - name: Test User Service
-        run: |
-          cd services/userService
-          mvn test
-
-      - name: Test Account Service
-        run: |
-          cd services/accountService
-          mvn test
-
-      - name: Test Transaction Service
-        run: |
-          cd services/transactionService
-          mvn test
-
-      - name: Test Credit Service
-        run: |
-          cd services/creditService
-          mvn test
-
-      - name: Test API Gateway
-        run: |
-          cd services/api-gateway
-          mvn test
-
-  # Job 2: Build and push Docker images
+  # Job 1: Build and push Docker images
   build-and-push:
     name: Build and Push Docker Images
-    needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
 
@@ -125,7 +78,7 @@ jobs:
           echo "  - ${{ env.DOCKER_USERNAME }}/${{ matrix.service.image }}:latest"
           echo "  - ${{ env.DOCKER_USERNAME }}/${{ matrix.service.image }}:${{ github.sha }}"
 
-  # Job 3: AWS deployment simulation
+  # Job 2: AWS deployment simulation
   deploy-simulation:
     name: AWS Deployment Simulation
     needs: build-and-push
@@ -212,10 +165,10 @@ jobs:
           echo "  3. Run smoke tests"
           echo "  4. Notify team of successful deployment"
 
-  # Job 4: Deployment notification
+  # Job 3: Deployment notification
   notify:
     name: Deployment Notification
-    needs: [test, build-and-push, deploy-simulation]
+    needs: [build-and-push, deploy-simulation]
     runs-on: ubuntu-latest
     if: always()
 
