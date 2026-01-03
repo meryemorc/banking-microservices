@@ -59,15 +59,14 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
-                // CORS'u yukarıdaki Bean ile yönettiğimiz için burada ayrıca konfigüre etmiyoruz
-                // Ancak bazı versiyonlarda .cors(Customizer.withDefaults()) eklemek gerekebilir
+                // CORS ayarlarını Gateway'in global ayarlarından almasını sağlar
+                .cors(Customizer.withDefaults())
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
                 .authorizeExchange(exchange -> exchange
-                        // Login ve Register her zaman açık olmalı
-                        .pathMatchers(HttpMethod.POST, "/users/register", "/users/login").permitAll()
-                        // OPTIONS istekleri CORS için her zaman serbest olmalı
+                        // Login, Register ve OPTIONS (Preflight) isteklerine tam izin ver
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/users/register", "/users/login").permitAll()
                         .pathMatchers("/eureka/**").permitAll()
                         .anyExchange().authenticated()
                 )
