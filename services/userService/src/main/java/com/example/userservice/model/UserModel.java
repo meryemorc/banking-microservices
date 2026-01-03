@@ -32,7 +32,12 @@ public class UserModel implements UserDetails {
     private String password;
 
     @Column(nullable = false)
-    private String role = "USER";  // Default: USER
+    private String role = "USER";
+
+    private String firstName;
+    private String lastName;
+    private String tcNo;
+    private String phone;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

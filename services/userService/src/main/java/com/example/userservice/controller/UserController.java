@@ -32,7 +32,10 @@ public class UserController {
         Map<String, Object> response = new HashMap<>();
         response.put("message", result);
         response.put("username", request.getUsername());
-
+        response.put("firstName", request.getFirstName());
+        response.put("lastName", request.getLastName());
+        response.put("tcNo", request.getTcNo());
+        response.put("phone", request.getPhone());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
