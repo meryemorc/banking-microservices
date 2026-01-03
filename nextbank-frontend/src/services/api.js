@@ -17,7 +17,7 @@ const api = {
         return response.json();
     },
 
-    // Admin login (aynı endpoint, role JWT'de)
+    // Admin login (aynı endpoint, role kontrolü)
     loginAdmin: async (credentials) => {
         const response = await fetch(`${API_BASE_URL}/users/login`, {
             method: 'POST',
@@ -27,8 +27,8 @@ const api = {
         if (!response.ok) throw new Error('Login failed');
         const data = await response.json();
 
-        // Admin kontrolü
-        if (data.user && data.user.role !== 'ADMIN') {
+        // Admin kontrolü - DÜZELTME YAPILDI
+        if (data.role !== 'ADMIN') {
             throw new Error('Unauthorized: Admin access required');
         }
 

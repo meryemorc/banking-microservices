@@ -24,7 +24,7 @@ export default function LoginPage() {
             localStorage.setItem('token', response.token);
             localStorage.setItem('user', JSON.stringify(response));
 
-            // Beni hatırla seçiliyse email'i kaydet
+
             if (rememberMe) {
                 localStorage.setItem('rememberedEmail', email);
             } else {

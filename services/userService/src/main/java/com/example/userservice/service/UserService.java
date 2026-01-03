@@ -27,18 +27,23 @@ public class UserService {
 
         if (userRepository.findByUsername(registerUser.getUsername()).isPresent()
                 || userRepository.findByEmail(registerUser.getEmail()).isPresent()) {
-            return "Kayıt başarısız! bu kullanıcı adı zaten var";
+            throw new RuntimeException("Bu kullanıcı adı veya e-posta zaten kullanılıyor!");
         }
 
         UserModel user = new UserModel();
         user.setUsername(registerUser.getUsername());
         user.setEmail(registerUser.getEmail());
+        user.setFirstName(registerUser.getFirstName());  // ← YENİ
+        user.setLastName(registerUser.getLastName());    // ← YENİ
+        user.setTcNo(registerUser.getTcNo());            // ← YENİ
+        user.setPhone(registerUser.getPhone());          // ← YENİ
+
         String hashedPassword = passwordEncoder.encode(registerUser.getPassword());
         user.setPassword(hashedPassword);
-        user.setRole("USER");  // ← EKLE! Default role
+        user.setRole("USER");
 
         userRepository.save(user);
-        return "Kayıt başarılı " + user.getUsername();
+        return "Kayıt başarılı: " + user.getUsername();
     }
 
     public UserLoginResponse login(UserLoginRequest loginUser) {
@@ -47,11 +52,27 @@ public class UserService {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginUser.getEmail(), loginUser.getPassword())
             );
+
             UserModel user = (UserModel) authentication.getPrincipal();
             String token = jwtUtil.generateToken(user, user.getId());
-            return new UserLoginResponse(token, convertToDTO(user));
+
+            // UserDTO oluştur
+            UserDTO userDTO = new UserDTO(
+                    user.getId(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getRole(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.getTcNo(),
+                    user.getPhone()
+            );
+
+            // UserLoginResponse oluştur
+            return new UserLoginResponse(token, userDTO);
+
         } catch (Exception e) {
-            throw new RuntimeException("Kimlik doğrulama başarısız. Kullanıcı adı veya şifre hatalı.", e);
+            throw new RuntimeException("Kimlik doğrulama başarısız. E-posta veya şifre hatalı.", e);
         }
     }
 
