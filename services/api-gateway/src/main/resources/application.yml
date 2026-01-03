@@ -4,49 +4,66 @@ server:
 spring:
   profiles:
     active: dev
-
   application:
     name: api-gateway
 
+  # --- JWT GÜVENLİK AYARLARI ---
   security:
     oauth2:
       resourceserver:
         jwt:
+          # Bu key'in Java tarafındaki ReactiveJwtDecoder ile aynı formatta olduğundan emin olun
           secret-key: NTg0ZTVmYzQ4Y2EwNDc2YmIzY2FhYjFiM2YwYTEwMTdmZTY1ZjYzYjQxZGYxMWU5ZTYxYmY2Y2M2YzU5YjA=
 
+  # --- GATEWAY VE CORS AYARLARI ---
   cloud:
     gateway:
+      # Küresel CORS Yapılandırması (Tarayıcı hatalarını önlemek için)
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+
+      # Microservice Rotaları
       routes:
-        # User Service
         - id: user-service-route
           uri: lb://USER-SERVICE
           predicates:
             - Path=/users/**
+          filters:
+            - RemoveRequestHeader=Cookie # Güvenlik için cookie'leri temizleyip sadece Bearer token kullanır
 
-        # Account Service
         - id: account-service-route
           uri: lb://ACCOUNT-SERVICE
           predicates:
             - Path=/accounts/**
 
-        # Transaction Service
         - id: transaction-service-route
           uri: lb://TRANSACTION-SERVICE
           predicates:
             - Path=/transactions/**
 
-        # Credit Service
         - id: credit-service-route
           uri: lb://CREDIT-SERVICE
           predicates:
             - Path=/credits/**
 
+# --- EUREKA AYARLARI ---
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka-server:8761/eureka/
+      defaultZone: http://localhost:8761/eureka/ # Yerel test için localhost olarak güncelledim
 
+# --- ÖZEL UYGULAMA AYARLARI ---
 application:
   security:
     jwt:
-      expiration: 36000000
+      expiration: 36000000 # 10 saat (ms cinsinden)
