@@ -3,6 +3,8 @@ package com.example.apigateway.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -18,7 +20,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
+import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -27,19 +29,17 @@ public class SecurityConfig {
     @Value("${spring.security.oauth2.resourceserver.jwt.secret-key}")
     private String secretKeyString;
 
-    // 1. CORS Yapılandırması: Tarayıcının "Preflight" (OPTIONS) isteklerine izin verir
     @Bean
+    @Order(Ordered.HIGHEST_PRECEDENCE)
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfig = new CorsConfiguration();
 
-        // React uygulamanızın çalıştığı adres
-        corsConfig.setAllowedOrigins(Collections.singletonList("http://localhost:3000"));
-        corsConfig.setMaxAge(3600L);
-        corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        corsConfig.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "x-requested-with"));
-
-        // Kimlik bilgilerine (Token/Cookie) izin ver
+        corsConfig.setAllowedOriginPatterns(List.of("http://localhost:3000"));
+        corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        corsConfig.setAllowedHeaders(List.of("*"));
+        corsConfig.setExposedHeaders(List.of("*"));
         corsConfig.setAllowCredentials(true);
+        corsConfig.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfig);
@@ -47,7 +47,6 @@ public class SecurityConfig {
         return new CorsWebFilter(source);
     }
 
-    // 2. JWT Decoder: Token doğrulama için
     @Bean
     public ReactiveJwtDecoder jwtDecoder() {
         byte[] decodedKey = Base64.getDecoder().decode(secretKeyString);
@@ -55,18 +54,14 @@ public class SecurityConfig {
         return NimbusReactiveJwtDecoder.withSecretKey(key).build();
     }
 
-    // 3. Security Filtre Zinciri
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
-                // CORS ayarlarını Gateway'in global ayarlarından almasını sağlar
                 .cors(Customizer.withDefaults())
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
                 .authorizeExchange(exchange -> exchange
-                        // Login, Register ve OPTIONS (Preflight) isteklerine tam izin ver
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .pathMatchers(HttpMethod.POST, "/users/register", "/users/login").permitAll()
+                        .pathMatchers("/users/register", "/users/login").permitAll()
                         .pathMatchers("/eureka/**").permitAll()
                         .anyExchange().authenticated()
                 )
